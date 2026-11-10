@@ -44,6 +44,9 @@ with tempfile.TemporaryDirectory() as d:
     assert not any(a.startswith("/cert") for a in r.client_args(f, "/usr/bin/sdl-freerdp3", "", None)[0])
     assert "/cert:tofu" in r.client_args(f, "/usr/bin/xfreerdp3", "", None)[0], "non-SDL clients cannot ask"
     assert not any(a.startswith("/p:") for a in r.client_args(f, "x", "", None)[0])
+    assert "-gfx" not in r.client_args(f, "x", "", None)[0]
+    f.set(r.GFX_KEY, "i", "0")
+    assert "-gfx" in r.client_args(f, "x", "", None)[0], "graphics acceleration off -> -gfx"
 
 # FreeRDP's log -> plain words (this line is from a real failed connect).
 log = ["[13:24:17:099] [29336:00007298] [ERROR][com.freerdp.client.SDL] - [handleShow]: "

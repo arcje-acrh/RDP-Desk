@@ -20,6 +20,7 @@ VERSION = "0.1.0"
 APP_ID = "io.github.rdpdesk"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "rdpdesk"
 FOLDERS_KEY = "rdpdesk folders"  # app-only key (JSON list of paths); FreeRDP and Windows skip unknown keys
+GFX_KEY = "rdpdesk graphics"  # app-only key: 0 = connect without the RDP 8 graphics pipeline (FreeRDP -gfx)
 # FreeRDP 3 clients, best first: the SDL one can ask about certificates and sizes itself to the window.
 CLIENTS = ("sdl-freerdp3", "sdl-freerdp", "xfreerdp3", "wlfreerdp3", "xfreerdp", "wlfreerdp")
 # ponytail: SDL full screen fails on Wayland (FreeRDP 3.32 + SDL 3.4: "virtual desktop width 80"),
@@ -164,6 +165,7 @@ TABS = [
                 ("3", "Satellite (2 – 16 Mbps, high latency)"), ("4", "High-speed broadband (2 – 10 Mbps)"),
                 ("5", "WAN (10 Mbps or more, high latency)"), ("6", "LAN (10 Mbps or more)"),
                 ("7", "Detect connection quality automatically")]),
+            R(GFX_KEY, "Graphics acceleration", default="1", subtitle="RDP 8 graphics with H.264; off if the picture flickers"),
         ]),
         ("Allow the following", "", [
             R("disable wallpaper", "Desktop background", "inv"),
@@ -243,6 +245,7 @@ HELP = {
     "remoteapplicationcmdline": "Extra arguments for the RemoteApp program, e.g. the file it should open.",
     # Experience
     "connection type": "Tells the remote computer how fast your connection is, so it can switch off visual effects to stay quick. 'Detect connection quality automatically' measures it and is right almost always.",
+    GFX_KEY: "The modern RDP 8 graphics stream (RemoteFX / H.264 video encoding): smoother and lighter on the network. Some Windows builds and virtual machines flicker or flash black with it, especially after a Windows update; turning it off uses the older drawing method, which is steady everywhere.",
     "disable wallpaper": "Show the remote computer's wallpaper. Turn it off to save data on slow connections.",
     "allow font smoothing": "ClearType smoothing for text: easier to read, costs a little more data.",
     "allow desktop composition": "Windows' transparency, blur and window shadow effects.",
@@ -310,6 +313,8 @@ def client_args(rdp, client, user, password):
             skipped.append(path)
         else:
             args.append(f"/drive:{Path(path).name or 'root'},{path}")
+    if rdp.get(GFX_KEY) == "0":
+        args.append("-gfx")
     # Only the SDL client can ask about an unknown certificate; the others trust it the first time.
     cert = {"0": "ignore", "1": "deny"}.get(rdp.get("authentication level"))
     cert = cert or (None if "sdl-" in Path(client).name else "tofu")
@@ -635,6 +640,8 @@ class Window(Adw.ApplicationWindow):
             out.append("Via RD Gateway")
         if g("administrative session") == "1":
             out.append("Admin session")
+        if g(GFX_KEY) == "0":
+            out.append("No graphics acceleration")
         return out
 
     def build_group(self, title, description, items):

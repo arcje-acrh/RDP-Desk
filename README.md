@@ -9,7 +9,7 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 
 - **Your connections in one list.** Each has its own coloured initials badge and a green dot while connected. Search them, and double-click one to connect. Each session opens in its own window, so several can run at once.
 - **A banner for every connection.** It shows the name, address and a live status (*Ready*, *Connected*, *Needs a computer*), with chips that sum up how it's set up (*Full screen*, *CORP\alex*, *2 shared folders*, *Via RD Gateway*…), plus one big Connect button.
-- **Every setting the Windows client has: 53 in all, in its six tabs.** General, Display, Local Resources, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
+- **Every setting the Windows client has: 54 in all, in its six tabs.** General, Display, Local Resources, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
 - **A help icon on every setting.** Hover the ⓘ to see what the setting does and when you would change it.
 - **Shared folders.** Pick folders such as Downloads or a NAS share. They appear on the remote computer as drives.
 - **Plain `.rdp` files.** Connections are stored in the format Windows uses:
@@ -80,7 +80,7 @@ Every setting has a hover help icon in the app. In brief:
 | **Display** | Window or full screen, size, *resize the remote desktop with the window*, scale to fit, remote scaling (125 %, 150 %…), all monitors / span / pick monitors, colour depth, connection bar |
 | **Local Resources** | Where sound plays, microphone, audio quality; where Windows key shortcuts go; clipboard, printers, smart cards, serial ports, all drives, USB devices, cameras, security keys, location; shared folders |
 | **Programs** | Start a program instead of the desktop; RemoteApp (one program window, no desktop) |
-| **Experience** | Connection speed (auto-detect), wallpaper, font smoothing, composition, window dragging, animations, visual styles, bitmap caching, automatic reconnect |
+| **Experience** | Connection speed (auto-detect), graphics acceleration (turn off if the picture flickers), wallpaper, font smoothing, composition, window dragging, animations, visual styles, bitmap caching, automatic reconnect |
 | **Advanced** | What to do with an unverified server certificate, Network Level Authentication, security layer negotiation, console (admin) session, RD Gateway |
 
 ## Passwords and the keyring
@@ -112,6 +112,7 @@ RDP Desk is one Python file (`rdpdesk.py`). It reads and writes `.rdp` files, sh
 - **"FreeRDP 3 is not installed"**: install your distribution's FreeRDP 3 package (`freerdp` on Arch, `freerdp3-sdl` on Debian/Ubuntu).
 - **"The computer did not answer"**: check the address, that Remote Desktop is turned on on that computer (Settings › System › Remote Desktop), and that a firewall allows port 3389.
 - **"Security negotiation failed"**: try switching *Network Level Authentication* on the Advanced tab.
+- **The picture flickers or flashes black** (often after a Windows update, especially in VMs): turn off *Graphics acceleration* on the Experience tab.
 - **A certificate warning on every connect**: normal for home PCs with a self-signed certificate. Set *If server authentication fails* to *Connect and don't warn me* only on networks you trust.
 
 ## Development
