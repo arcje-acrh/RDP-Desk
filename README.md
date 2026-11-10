@@ -9,7 +9,7 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 
 - **Your connections in one list**, each with a status light that glows green while connected. Search them, and double-click one to connect. Each session opens in its own window, so several can run at once.
 - **A header card for every connection**: status (*Ready*, *Connected*, *Needs a computer*), name, address and one big Connect button, over a strip that sums up the setup at a glance: *Screen*, *Sign in*, *Shared* and *Route*.
-- **Every setting the Windows client has: 54 in all, in its six tabs.** General, Display, Local Resources, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
+- **Every setting the Windows client has: 54 in all, in six tabs** (the Windows client's, with *Local Resources* called *Devices*). General, Display, Devices, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
 - **A help icon on every setting.** Hover the ⓘ to see what the setting does and when you would change it.
 - **Shared folders.** Pick folders such as Downloads or a NAS share. They appear on the remote computer as drives.
 - **Plain `.rdp` files.** Connections are stored in the format Windows uses:
@@ -26,8 +26,8 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 
 | | |
 |---|---|
-| ![Display tab](docs/screenshots/display.png) | ![Local Resources tab with shared folders](docs/screenshots/local.png) |
-| **Display**: window or full screen, resolution, scaling, monitors | **Local Resources**: audio, keyboard, devices, shared folders |
+| ![Display tab](docs/screenshots/display.png) | ![Devices tab with shared folders](docs/screenshots/local.png) |
+| **Display**: window or full screen, resolution, scaling, monitors | **Devices**: audio, keyboard, devices, shared folders |
 | ![Experience tab](docs/screenshots/experience.png) | ![Advanced tab](docs/screenshots/advanced.png) |
 | **Experience**: connection speed and visual effects | **Advanced**: server authentication, NLA, RD Gateway |
 | ![Sign-in dialog](docs/screenshots/sign-in.png) | ![Light style](docs/screenshots/light.png) |
@@ -78,7 +78,7 @@ Every setting has a hover help icon in the app. In brief:
 |---|---|
 | **General** | Name, computer (name or IP, optional `:port`), user name, domain, password, *always ask for credentials* |
 | **Display** | Window or full screen, size, *resize the remote desktop with the window*, scale to fit, remote scaling (125 %, 150 %…), all monitors / span / pick monitors, colour depth, connection bar |
-| **Local Resources** | Where sound plays, microphone, audio quality; where Windows key shortcuts go; clipboard, printers, smart cards, serial ports, all drives, USB devices, cameras, security keys, location; shared folders |
+| **Devices** | Where sound plays, microphone, audio quality; where Windows key shortcuts go; clipboard, printers, smart cards, serial ports, all drives, USB devices, cameras, security keys, location; shared folders |
 | **Programs** | Start a program instead of the desktop; RemoteApp (one program window, no desktop) |
 | **Experience** | Connection speed (auto-detect), graphics acceleration (turn off if the picture flickers), wallpaper, font smoothing, composition, window dragging, animations, visual styles, bitmap caching, automatic reconnect |
 | **Advanced** | What to do with an unverified server certificate, Network Level Authentication, security layer negotiation, console (admin) session, RD Gateway |

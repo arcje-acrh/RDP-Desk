@@ -122,7 +122,7 @@ TABS = [
             R("pinconnectionbar", "Pin the connection bar", default="1"),
         ]),
     ]),
-    ("local", "Local Resources", "audio-speakers-symbolic", [
+    ("local", "Devices", "audio-speakers-symbolic", [
         ("Remote audio", "", [
             R("audiomode", "Remote audio playback", "combo", "0", [
                 ("0", "Play on this computer"), ("1", "Play on the remote computer"), ("2", "Do not play")]),
@@ -427,12 +427,7 @@ CSS = """
 .led.warning { background: @warning_color; }
 .hero .led { min-height: 0; }
 .conn-row .subtitle { font-family: monospace; font-size: 0.85em; }
-.hero {
-  padding: 18px 20px 16px 16px;
-  border-radius: 14px;
-  background-image: linear-gradient(110deg, alpha(@accent_bg_color, 0.16), alpha(@accent_bg_color, 0.0) 60%);
-  box-shadow: inset 0 0 0 1px alpha(@window_fg_color, 0.09);
-}
+.hero { padding: 6px 0 0 0; }
 .hero-name { font-size: 1.75em; font-weight: 800; letter-spacing: -0.02em; }
 .hero-host { font-family: monospace; color: @accent_color; }
 .status { font-size: 0.72em; font-weight: 800; letter-spacing: 0.12em; opacity: 0.6; }
@@ -441,8 +436,13 @@ CSS = """
 .rule { min-height: 1px; background: alpha(@window_fg_color, 0.09); }
 .spec-key { font-size: 0.68em; font-weight: 800; letter-spacing: 0.14em; opacity: 0.5; }
 .spec-value { font-weight: 600; }
+.rail { margin-top: 16px; box-shadow: inset 0 -1px alpha(@window_fg_color, 0.09); }
+.rail-tab, .rail-tab:hover, .rail-tab:checked, .rail-tab:active {
+  border-radius: 0; padding: 7px 7px 9px 7px; margin-right: 6px; background: none;
+  font-weight: 700; color: alpha(@window_fg_color, 0.5); }
+.rail-tab:hover { color: @window_fg_color; }
+.rail-tab:checked { color: @window_fg_color; box-shadow: inset 0 -2px @accent_color; }
 .big-connect { padding: 9px 24px; font-weight: 800; }
-.tabs { margin: 14px 0 2px 0; }
 """
 
 
@@ -502,12 +502,8 @@ class Window(Adw.ApplicationWindow):
         self.toasts.set_child(self.split)
         self.set_content(self.toasts)
 
-        narrow = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 1100sp"))
-        narrow.add_setter(self.switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
-        self.add_breakpoint(narrow)
         phone = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 640sp"))
         phone.add_setter(self.split, "collapsed", True)
-        phone.add_setter(self.switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.add_breakpoint(phone)
 
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -554,9 +550,20 @@ class Window(Adw.ApplicationWindow):
                 page.add(self.build_folders() if group == "FOLDERS" else self.build_group(*group))
             self.tabs.add_titled_with_icon(page, tab_id, title, icon)
 
-        # Tabs as one rounded segmented control under the banner, not in the title bar (no room there).
-        self.switcher = Adw.InlineViewSwitcher(stack=self.tabs, css_classes=["round", "tabs"], homogeneous=False,
-                                               display_mode=Adw.InlineViewSwitcherDisplayMode.LABELS)
+        # Tabs: a text rail with an underline under the header, never icons-only; scrolls sideways if too narrow.
+        rail = Gtk.Box(css_classes=["rail"])
+        self.tab_buttons, group = {}, None
+        for tab_id, title, *_ in TABS:
+            b = Gtk.ToggleButton(label=title, group=group, css_classes=["rail-tab"])
+            b.connect("toggled", lambda b, t=tab_id: b.get_active() and self.tabs.set_visible_child_name(t))
+            rail.append(b)
+            group = group or b
+            self.tab_buttons[tab_id] = b
+        self.tab_buttons[TABS[0][0]].set_active(True)
+        self.tabs.connect("notify::visible-child-name",
+                          lambda st, _: self.tab_buttons[st.get_visible_child_name()].set_active(True))
+        self.switcher = Gtk.ScrolledWindow(child=rail, hscrollbar_policy=Gtk.PolicyType.EXTERNAL,
+                                           vscrollbar_policy=Gtk.PolicyType.NEVER, propagate_natural_height=True)
         tools = Gio.Menu()
         for label, action, icon in [("Duplicate", "win.duplicate", "edit-copy-symbolic"),
                                     ("Export…", "win.export", "document-save-as-symbolic"),
@@ -571,8 +578,8 @@ class Window(Adw.ApplicationWindow):
         header = Adw.HeaderBar(show_title=False)
         self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=more, tooltip_text="More")
         header.pack_end(self.more_button)
-        top = Adw.Clamp(maximum_size=720, tightening_threshold=600, margin_top=10, margin_start=12, margin_end=12)
-        top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        top = Adw.Clamp(maximum_size=600, tightening_threshold=560, margin_top=14, margin_start=12, margin_end=12)
+        top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=12, margin_end=12)
         top_box.append(self.build_hero())
         top_box.append(self.switcher)
         top.set_child(top_box)
