@@ -3,7 +3,7 @@
 #   sudo pacman -R rdpdesk                       -> removes it again
 pkgname=rdpdesk
 pkgver=0.1.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Keep, edit and open Remote Desktop (RDP) connections (GTK 4 / libadwaita, FreeRDP)"
 arch=(any)
 url="https://github.com/arcje-acrh/rdpdesk"

@@ -7,8 +7,8 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 
 ## Features
 
-- **Your connections in one list.** Each has its own coloured initials badge and a green dot while connected. Search them, and double-click one to connect. Each session opens in its own window, so several can run at once.
-- **A banner for every connection.** It shows the name, address and a live status (*Ready*, *Connected*, *Needs a computer*), with chips that sum up how it's set up (*Full screen*, *CORP\alex*, *2 shared folders*, *Via RD Gateway*…), plus one big Connect button.
+- **Your connections in one list**, each with a status light that glows green while connected. Search them, and double-click one to connect. Each session opens in its own window, so several can run at once.
+- **A header card for every connection**: status (*Ready*, *Connected*, *Needs a computer*), name, address and one big Connect button, over a strip that sums up the setup at a glance: *Screen*, *Sign in*, *Shared* and *Route*.
 - **Every setting the Windows client has: 54 in all, in its six tabs.** General, Display, Local Resources, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
 - **A help icon on every setting.** Hover the ⓘ to see what the setting does and when you would change it.
 - **Shared folders.** Pick folders such as Downloads or a NAS share. They appear on the remote computer as drives.
@@ -61,11 +61,11 @@ It needs GTK ≥ 4.12, libadwaita ≥ 1.5, Python ≥ 3.10 and FreeRDP 3.
 
 ## Using it
 
-- **New connection** (＋ or Ctrl+N): type the computer's name or IP address on the General tab and press the big **Connect** button in the banner. That's all. Everything else has sensible defaults.
+- **New connection** (＋ or Ctrl+N): type the computer's name or IP address on the General tab and press the big **Connect** button in the header card. That's all. Everything else has sensible defaults.
 - **Import** (☰ › Import, Ctrl+O, or drag files onto the window) copies `.rdp` files into your list.
 - **Connect**: the Connect button, a double-click in the list, or Ctrl+Enter. Press it again (**Disconnect**) to end the session.
 - **Passwords**: type it in the Password row and press Enter to save it in the keyring. Leave it empty and you're asked when connecting, with an option to remember it.
-- **More** (⋮): Duplicate, Export… and Delete.
+- **More** (⋮): Duplicate, Export and Delete as icon buttons, and Copy the address.
 - **Search**: Ctrl+F.
 
 Changes are saved as you make them. Connections live in `~/.local/share/rdpdesk/` as ordinary `.rdp` files.

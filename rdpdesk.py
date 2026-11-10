@@ -421,22 +421,40 @@ def help_icon(text):
 
 
 CSS = """
+/* Theme colour names only, so it follows light/dark and any accent. */
+.led { min-width: 4px; min-height: 26px; border-radius: 2px; background: alpha(@window_fg_color, 0.14); }
+.led.online { background: @success_color; box-shadow: 0 0 8px alpha(@success_color, 0.6); }
+.led.warning { background: @warning_color; }
+.hero .led { min-height: 0; }
+.conn-row .subtitle { font-family: monospace; font-size: 0.85em; }
 .hero {
-  padding: 20px 22px;
-  border-radius: 18px;
-  background-image: linear-gradient(120deg, alpha(@accent_bg_color, 0.28), alpha(@accent_bg_color, 0.07) 55%, alpha(@accent_bg_color, 0.0));
-  box-shadow: inset 0 0 0 1px alpha(@accent_bg_color, 0.22);
+  padding: 18px 20px 16px 16px;
+  border-radius: 14px;
+  background-image: linear-gradient(110deg, alpha(@accent_bg_color, 0.16), alpha(@accent_bg_color, 0.0) 60%);
+  box-shadow: inset 0 0 0 1px alpha(@window_fg_color, 0.09);
 }
-.hero-name { font-size: 1.7em; font-weight: 800; letter-spacing: -0.02em; }
-.hero-host { font-family: monospace; opacity: 0.72; }
-.status { border-radius: 999px; padding: 2px 10px; font-size: 0.78em; font-weight: 800;
-          letter-spacing: 0.04em; background: alpha(@window_fg_color, 0.08); }
-.status.online { background: alpha(@success_color, 0.18); color: @success_color; }
-.status.warning { background: alpha(@warning_color, 0.18); color: @warning_color; }
-.chip { border-radius: 999px; padding: 3px 11px; font-size: 0.86em; background: alpha(@window_fg_color, 0.07); }
-.big-connect { padding: 10px 26px; font-weight: 800; font-size: 1.05em; }
-.online-dot { color: @success_color; font-size: 0.75em; }
+.hero-name { font-size: 1.75em; font-weight: 800; letter-spacing: -0.02em; }
+.hero-host { font-family: monospace; color: @accent_color; }
+.status { font-size: 0.72em; font-weight: 800; letter-spacing: 0.12em; opacity: 0.6; }
+.status.online { color: @success_color; opacity: 1; }
+.status.warning { color: @warning_color; opacity: 1; }
+.rule { min-height: 1px; background: alpha(@window_fg_color, 0.09); }
+.spec-key { font-size: 0.68em; font-weight: 800; letter-spacing: 0.14em; opacity: 0.5; }
+.spec-value { font-weight: 600; }
+.big-connect { padding: 9px 24px; font-weight: 800; }
+.tabs { margin: 14px 0 2px 0; }
 """
+
+
+def menu_sections(*sections):
+    """A Gio.Menu with one section per list of (label, action); GTK shows the shortcuts itself."""
+    menu = Gio.Menu()
+    for items in sections:
+        part = Gio.Menu()
+        for label, action in items:
+            part.append(label, action)
+        menu.append_section(None, part)
+    return menu
 
 
 def safe_name(text):
@@ -471,7 +489,8 @@ class Window(Adw.ApplicationWindow):
 
         for name, fn in [("new", self.new), ("import", self.pick_import), ("folder", self.open_folder),
                          ("about", self.about), ("connect", self.toggle_session), ("duplicate", self.duplicate),
-                         ("export", self.export), ("delete", self.delete), ("search", self.focus_search)]:
+                         ("export", self.export), ("delete", self.delete), ("search", self.focus_search),
+                         ("copy-address", self.copy_address)]:
             action = Gio.SimpleAction.new(name, None)
             action.connect("activate", lambda *_, f=fn: f())
             self.add_action(action)
@@ -483,14 +502,12 @@ class Window(Adw.ApplicationWindow):
         self.toasts.set_child(self.split)
         self.set_content(self.toasts)
 
-        narrow = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 1400sp"))
-        narrow.add_setter(self.switcher, "visible", False)
-        narrow.add_setter(self.switcher_bar, "reveal", True)
+        narrow = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 1100sp"))
+        narrow.add_setter(self.switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.add_breakpoint(narrow)
         phone = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 640sp"))
         phone.add_setter(self.split, "collapsed", True)
-        phone.add_setter(self.switcher, "visible", False)
-        phone.add_setter(self.switcher_bar, "reveal", True)
+        phone.add_setter(self.switcher, "display-mode", Adw.InlineViewSwitcherDisplayMode.ICONS)
         self.add_breakpoint(phone)
 
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
@@ -506,16 +523,17 @@ class Window(Adw.ApplicationWindow):
         header = Adw.HeaderBar(title_widget=self.side_title)
         header.pack_start(Gtk.Button(icon_name="list-add-symbolic", tooltip_text="New connection (Ctrl+N)",
                                      action_name="win.new"))
-        menu = Gio.Menu()
-        menu.append("Import .rdp files…", "win.import")
-        menu.append("Open the connections folder", "win.folder")
-        menu.append("About RDP Desk", "win.about")
-        header.pack_end(Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Menu"))
+        menu = menu_sections([("New connection", "win.new"), ("Import .rdp files…", "win.import")],
+                             [("Open the connections folder", "win.folder")],
+                             [("About RDP Desk", "win.about")])
+        self.menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Menu")
+        header.pack_end(self.menu_button)
 
         self.search = Gtk.SearchEntry(placeholder_text="Search connections", margin_start=8, margin_end=8,
                                       margin_bottom=6)
         self.search.connect("search-changed", lambda *_: self.list.invalidate_filter())
         self.list = Gtk.ListBox(css_classes=["navigation-sidebar"], activate_on_single_click=False)
+        self.list.set_placeholder(Gtk.Label(label="Nothing matches", css_classes=["dim-label"], margin_top=24))
         self.list.set_sort_func(lambda a, b: (a.name.casefold() > b.name.casefold()) - (a.name.casefold() < b.name.casefold()))
         self.list.set_filter_func(lambda row: self.search.get_text().casefold() in (row.name + " " + row.get_subtitle()).casefold())
         self.list.connect("row-selected", self.on_select)
@@ -536,21 +554,34 @@ class Window(Adw.ApplicationWindow):
                 page.add(self.build_folders() if group == "FOLDERS" else self.build_group(*group))
             self.tabs.add_titled_with_icon(page, tab_id, title, icon)
 
-        self.switcher = Adw.ViewSwitcher(stack=self.tabs, policy=Adw.ViewSwitcherPolicy.WIDE)
-        self.switcher_bar = Adw.ViewSwitcherBar(stack=self.tabs)
-        more = Gio.Menu()
-        more.append("Duplicate", "win.duplicate")
-        more.append("Export…", "win.export")
-        more.append("Delete", "win.delete")
-        header = Adw.HeaderBar(title_widget=self.switcher)
-        header.pack_end(Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=more, tooltip_text="More"))
+        # Tabs as one rounded segmented control under the banner, not in the title bar (no room there).
+        self.switcher = Adw.InlineViewSwitcher(stack=self.tabs, css_classes=["round", "tabs"], homogeneous=False,
+                                               display_mode=Adw.InlineViewSwitcherDisplayMode.LABELS)
+        tools = Gio.Menu()
+        for label, action, icon in [("Duplicate", "win.duplicate", "edit-copy-symbolic"),
+                                    ("Export…", "win.export", "document-save-as-symbolic"),
+                                    ("Delete", "win.delete", "user-trash-symbolic")]:
+            item = Gio.MenuItem.new(label, action)
+            item.set_attribute_value("verb-icon", GLib.Variant.new_string(icon))
+            tools.append_item(item)
+        row = Gio.MenuItem.new_section(None, tools)
+        row.set_attribute_value("display-hint", GLib.Variant.new_string("horizontal-buttons"))
+        more = menu_sections([("Copy the address", "win.copy-address")])
+        more.prepend_item(row)
+        header = Adw.HeaderBar(show_title=False)
+        self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=more, tooltip_text="More")
+        header.pack_end(self.more_button)
+        top = Adw.Clamp(maximum_size=720, tightening_threshold=600, margin_top=10, margin_start=12, margin_end=12)
+        top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        top_box.append(self.build_hero())
+        top_box.append(self.switcher)
+        top.set_child(top_box)
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        body.append(self.build_hero())
+        body.append(top)
         self.tabs.set_vexpand(True)
         body.append(self.tabs)
         edit = Adw.ToolbarView(content=body)
         edit.add_top_bar(header)
-        edit.add_bottom_bar(self.switcher_bar)
 
         new = Gtk.Button(label="New connection", action_name="win.new", halign=Gtk.Align.CENTER,
                          css_classes=["pill", "suggested-action"])
@@ -571,28 +602,33 @@ class Window(Adw.ApplicationWindow):
         return self.pages
 
     def build_hero(self):
-        """The banner over the tabs: who this is, where it goes, how it is set up, and the big button."""
-        self.hero_avatar = Adw.Avatar(size=64, show_initials=True, valign=Gtk.Align.CENTER)
+        """The banner over the tabs: a status light, the name and address, the big button, then a spec strip."""
+        self.hero_led = Gtk.Box(css_classes=["led"])
         self.hero_name = Gtk.Label(xalign=0, ellipsize=Pango.EllipsizeMode.END, css_classes=["hero-name"])
         self.hero_host = Gtk.Label(xalign=0, ellipsize=Pango.EllipsizeMode.END, selectable=True, css_classes=["hero-host"])
-        self.hero_status = Gtk.Label(css_classes=["status"], valign=Gtk.Align.CENTER)
-        line = Gtk.Box(spacing=10)
-        line.append(self.hero_host)
-        line.append(self.hero_status)
-        self.hero_chips = Gtk.Box(spacing=6)
-        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True, valign=Gtk.Align.CENTER)
-        for w in (self.hero_name, line):
+        self.hero_status = Gtk.Label(xalign=0, css_classes=["status"])
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True, valign=Gtk.Align.CENTER)
+        for w in (self.hero_status, self.hero_name, self.hero_host):
             text.append(w)
         self.connect_button = Gtk.Button(label="Connect", tooltip_text="Connect (Ctrl+Enter, or double-click it in the list)",
                                          action_name="win.connect", valign=Gtk.Align.CENTER)
-        top = Gtk.Box(spacing=18)
-        for w in (self.hero_avatar, text, self.connect_button):
+        top = Gtk.Box(spacing=16)
+        for w in (text, self.connect_button):
             top.append(w)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, css_classes=["hero"])
-        box.append(top)
-        box.append(self.hero_chips)
-        return Adw.Clamp(maximum_size=600, tightening_threshold=560, child=box,
-                         margin_top=18, margin_bottom=2, margin_start=12, margin_end=12)
+        self.specs = Gtk.Grid(column_homogeneous=True, column_spacing=12, row_spacing=2)
+        self.spec_values = []
+        for col, key in enumerate(("SCREEN", "SIGN IN", "SHARED", "ROUTE")):
+            value = Gtk.Label(xalign=0, ellipsize=Pango.EllipsizeMode.END, css_classes=["spec-value"])
+            self.specs.attach(Gtk.Label(label=key, xalign=0, css_classes=["spec-key"]), col, 0, 1, 1)
+            self.specs.attach(value, col, 1, 1, 1)
+            self.spec_values.append(value)
+        inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, hexpand=True)
+        for w in (top, Gtk.Box(css_classes=["rule"]), self.specs):
+            inner.append(w)
+        box = Gtk.Box(spacing=16, css_classes=["hero"])
+        box.append(self.hero_led)
+        box.append(inner)
+        return box
 
     def update_hero(self):
         if not self.rdp:
@@ -600,49 +636,46 @@ class Window(Adw.ApplicationWindow):
         rdp, name = self.rdp, self.rdp.path.stem
         running = str(rdp.path) in self.sessions
         host = rdp.get("full address", "")
-        self.hero_avatar.set_text(name)
         self.hero_name.set_label(name)
         self.hero_host.set_label(host or "no computer set")
-        status, kind = ("● CONNECTED", "online") if running else ("READY", "") if host else ("NEEDS A COMPUTER", "warning")
-        self.hero_status.set_label(status)
-        self.hero_status.set_css_classes(["status"] + ([kind] if kind else []))
+        status, kind = ("CONNECTED", "online") if running else ("READY", "") if host else ("NEEDS A COMPUTER", "warning")
+        extras = self.extras(rdp)
+        self.hero_status.set_label("  ·  ".join([status] + [e.upper() for e in extras]))
+        for w, base in ((self.hero_status, "status"), (self.hero_led, "led")):
+            w.set_css_classes([base] + ([kind] if kind else []))
         self.connect_button.set_label("Disconnect" if running else "Connect")
         self.connect_button.set_css_classes(["pill", "big-connect", "destructive-action" if running else "suggested-action"])
-        while child := self.hero_chips.get_first_child():
-            self.hero_chips.remove(child)
-        chips = self.chips(rdp)
-        shown = chips if len(chips) <= 4 else chips[:3] + [f"+{len(chips) - 3}"]
-        for chip in shown:
-            label = Gtk.Label(label=chip, css_classes=["chip"])
-            if chip.startswith("+"):
-                label.set_tooltip_text(" · ".join(chips[3:]))
-            self.hero_chips.append(label)
+        for label, value in zip(self.spec_values, self.specs_of(rdp)):
+            label.set_label(value)
+            label.set_tooltip_text(value)
 
     @staticmethod
-    def chips(rdp):
-        """A few words on how this connection is set up."""
+    def specs_of(rdp):
+        """Screen, sign-in, shared folders and route, in a few words each."""
         g = rdp.get
-        out = ["Full screen" if g("screen mode id") == "2" else
-               "Window · resizes" if g("dynamic resolution") == "1" else f"Window · {g('desktopwidth')}×{g('desktopheight')}"]
+        screen = ("Full screen" if g("screen mode id") == "2" else
+                  "Window, resizes" if g("dynamic resolution") == "1" else f"{g('desktopwidth')} × {g('desktopheight')}")
         if g("use multimon") == "1":
-            out.append("All monitors")
+            screen = "All monitors"
         user = g("username", "")
-        if user:
-            out.append(f"{g('domain')}\\{user}" if g("domain") else user)
+        sign_in = (f"{g('domain')}\\{user}" if g("domain") else user) if user else "Asks"
         n = len(rdp.folders())
-        if n:
-            out.append(f"{n} shared folder{'s' if n > 1 else ''}")
-        if g("audiocapturemode") == "1":
-            out.append("Microphone")
-        if g("remoteapplicationmode") == "1":
-            out.append("RemoteApp")
-        if g("gatewayusagemethod", "0") != "0" and g("gatewayhostname"):
-            out.append("Via RD Gateway")
-        if g("administrative session") == "1":
-            out.append("Admin session")
-        if g(GFX_KEY) == "0":
-            out.append("No graphics acceleration")
-        return out
+        shared = f"{n} folder{'s' if n > 1 else ''}" if n else "Nothing"
+        route = "RD Gateway" if g("gatewayusagemethod", "0") != "0" and g("gatewayhostname") else "Direct"
+        return screen, sign_in, shared, route
+
+    @staticmethod
+    def extras(rdp):
+        g = rdp.get
+        return [label for on, label in [(g("remoteapplicationmode") == "1", "RemoteApp"),
+                                        (g("administrative session") == "1", "Admin"),
+                                        (g("audiocapturemode") == "1", "Mic"),
+                                        (g(GFX_KEY) == "0", "No GPU accel")] if on]
+
+    def copy_address(self):
+        if self.rdp and (host := self.rdp.get("full address", "")):
+            self.get_clipboard().set(host)
+            self.toast(f"Copied {host}")
 
     def build_group(self, title, description, items):
         group = Adw.PreferencesGroup(title=title, description=description)
@@ -707,10 +740,9 @@ class Window(Adw.ApplicationWindow):
                 host = RdpFile(path).get("full address", "")
             except OSError:
                 continue
-            row = Adw.ActionRow(title=GLib.markup_escape_text(path.stem))
-            row.add_prefix(Adw.Avatar(size=34, text=path.stem, show_initials=True))
-            row.dot = Gtk.Label(label="●", css_classes=["online-dot"], visible=False, tooltip_text="Connected")
-            row.add_suffix(row.dot)
+            row = Adw.ActionRow(title=GLib.markup_escape_text(path.stem), css_classes=["conn-row"])
+            row.led = Gtk.Box(css_classes=["led"], valign=Gtk.Align.CENTER)
+            row.add_prefix(row.led)
             row.name, row.path, row.host = path.stem, path, host
             self.list.append(row)
             if str(path) == select:
@@ -727,7 +759,7 @@ class Window(Adw.ApplicationWindow):
         i = 0
         while row := self.list.get_row_at_index(i):
             row.set_subtitle(GLib.markup_escape_text(row.host or "No computer set"))
-            row.dot.set_visible(str(row.path) in self.sessions)
+            row.led.set_css_classes(["led", "online"] if str(row.path) in self.sessions else ["led"])
             i += 1
         live = len(self.sessions)
         self.side_title.set_subtitle(f"{i} connection{'' if i == 1 else 's'}" + (f" · {live} connected" if live else ""))
