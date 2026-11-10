@@ -1,0 +1,5 @@
+# package build (makepkg) output
+pkg/src/
+pkg/pkg/
+pkg/*.pkg.tar.*
+__pycache__/

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=RDP Desk
+GenericName=Remote Desktop Client
+Comment=Keep, edit and open Remote Desktop (RDP) connections
+Exec=rdpdesk %F
+Icon=io.github.rdpdesk
+Terminal=false
+Categories=Network;RemoteAccess;GTK;
+Keywords=rdp;remote;desktop;windows;mstsc;freerdp;
+MimeType=application/x-rdp;
+StartupNotify=true
+StartupWMClass=io.github.rdpdesk
