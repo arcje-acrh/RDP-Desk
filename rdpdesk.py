@@ -88,7 +88,7 @@ def R(key, title, kind="switch", default="0", choices=None, lo=0, hi=0, subtitle
 
 
 TABS = [
-    ("general", "General", "computer-symbolic", [
+    ("general", "General", "network-wired-symbolic", [
         ("Connection", "", ["NAME", R("full address", "Computer (name or IP, optional :port)", "text", "")]),
         ("Sign in", "", [
             R("username", "User name", "text", ""),
@@ -122,7 +122,7 @@ TABS = [
             R("pinconnectionbar", "Pin the connection bar", default="1"),
         ]),
     ]),
-    ("local", "Devices", "audio-speakers-symbolic", [
+    ("local", "Devices", "input-keyboard-symbolic", [
         ("Remote audio", "", [
             R("audiomode", "Remote audio playback", "combo", "0", [
                 ("0", "Play on this computer"), ("1", "Play on the remote computer"), ("2", "Do not play")]),
@@ -146,7 +146,7 @@ TABS = [
         ]),
         "FOLDERS",
     ]),
-    ("programs", "Programs", "system-run-symbolic", [
+    ("programs", "Programs", "view-app-grid-symbolic", [
         ("Start a program on connection", "Leave empty for the normal desktop.", [
             R("alternate shell", "Program path and file name", "text", ""),
             R("shell working directory", "Start in this folder", "text", ""),
@@ -158,7 +158,7 @@ TABS = [
             R("remoteapplicationcmdline", "Command-line arguments", "text", ""),
         ]),
     ]),
-    ("experience", "Experience", "preferences-desktop-appearance-symbolic", [
+    ("experience", "Experience", "power-profile-performance-symbolic", [
         ("Performance", "", [
             R("connection type", "Connection speed", "combo", "7", [
                 ("1", "Modem (56 Kbps)"), ("2", "Low-speed broadband (256 Kbps – 2 Mbps)"),
@@ -181,7 +181,7 @@ TABS = [
             R("autoreconnect max retries", "Attempts", "spin", "20", lo=1, hi=1000),
         ]),
     ]),
-    ("advanced", "Advanced", "preferences-system-symbolic", [
+    ("advanced", "Advanced", "security-high-symbolic", [
         ("Server authentication", "", [
             R("authentication level", "If server authentication fails", "combo", "2", [
                 ("0", "Connect and don't warn me"), ("2", "Warn me"), ("1", "Do not connect")]),
@@ -427,7 +427,13 @@ CSS = """
 .led.warning { background: @warning_color; }
 .hero .led { min-height: 0; }
 .conn-row .subtitle { font-family: monospace; font-size: 0.85em; }
-.hero { padding: 6px 0 0 0; }
+.hero {
+  padding: 18px 20px 16px 16px;
+  border-radius: 14px;
+  background-image: linear-gradient(110deg, alpha(@accent_bg_color, 0.16), alpha(@accent_bg_color, 0.0) 60%);
+  box-shadow: inset 0 0 0 1px alpha(@window_fg_color, 0.09);
+}
+.hero.online { background-image: linear-gradient(110deg, alpha(@success_color, 0.14), alpha(@success_color, 0.0) 60%); }
 .hero-name { font-size: 1.75em; font-weight: 800; letter-spacing: -0.02em; }
 .hero-host { font-family: monospace; color: @accent_color; }
 .status { font-size: 0.72em; font-weight: 800; letter-spacing: 0.12em; opacity: 0.6; }
@@ -436,13 +442,15 @@ CSS = """
 .rule { min-height: 1px; background: alpha(@window_fg_color, 0.09); }
 .spec-key { font-size: 0.68em; font-weight: 800; letter-spacing: 0.14em; opacity: 0.5; }
 .spec-value { font-weight: 600; }
-.rail { margin-top: 16px; box-shadow: inset 0 -1px alpha(@window_fg_color, 0.09); }
-.rail-tab, .rail-tab:hover, .rail-tab:checked, .rail-tab:active {
-  border-radius: 0; padding: 7px 7px 9px 7px; margin-right: 6px; background: none;
-  font-weight: 700; color: alpha(@window_fg_color, 0.5); }
-.rail-tab:hover { color: @window_fg_color; }
-.rail-tab:checked { color: @window_fg_color; box-shadow: inset 0 -2px @accent_color; }
 .big-connect { padding: 9px 24px; font-weight: 800; }
+.go { background: alpha(@success_color, 0.22); color: @success_color; }
+.go:hover { background: alpha(@success_color, 0.32); }
+.stop { background: alpha(@destructive_color, 0.22); color: @destructive_color; }
+.stop:hover { background: alpha(@destructive_color, 0.32); }
+.sections { background: none; }
+.sections row { padding: 9px 12px; margin-bottom: 2px; }
+.sections row image { opacity: 0.7; }
+.sections row:selected image { opacity: 1; color: @accent_color; }
 """
 
 
@@ -502,9 +510,25 @@ class Window(Adw.ApplicationWindow):
         self.toasts.set_child(self.split)
         self.set_content(self.toasts)
 
-        phone = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 640sp"))
-        phone.add_setter(self.split, "collapsed", True)
-        self.add_breakpoint(phone)
+        # Fit the window: narrow -> sections as a bottom bar; short -> a compact card (no spec strip);
+        # phone -> the connection list becomes its own page. Only one breakpoint applies at a time, so the
+        # combined cases are spelled out.
+        def fit(condition, narrow=False, short=False, phone=False):
+            bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse(condition))
+            if narrow:
+                bp.add_setter(self.sections, "visible", False)
+                bp.add_setter(self.switcher_bar, "reveal", True)
+            if short:
+                bp.add_setter(self.specs, "visible", False)
+                bp.add_setter(self.hero_rule, "visible", False)
+            if phone:
+                bp.add_setter(self.split, "collapsed", True)
+            self.add_breakpoint(bp)
+        fit("max-height: 680sp", short=True)
+        fit("max-width: 960sp", narrow=True)
+        fit("max-width: 960sp and max-height: 680sp", narrow=True, short=True)
+        fit("max-width: 640sp", narrow=True, phone=True)
+        fit("max-width: 640sp and max-height: 680sp", narrow=True, short=True, phone=True)
 
         drop = Gtk.DropTarget.new(Gdk.FileList, Gdk.DragAction.COPY)
         drop.connect("drop", lambda _t, value, _x, _y: bool(self.import_files(value.get_files())))
@@ -543,27 +567,32 @@ class Window(Adw.ApplicationWindow):
         return view
 
     def build_content(self):
-        self.tabs = Adw.ViewStack()
+        # Each tab is a plain column of groups (not an AdwPreferencesPage, which is fixed at 600 px), so the
+        # settings can be exactly as wide as the card above them.
+        self.tabs = Adw.ViewStack(hexpand=True, vexpand=True)
         for tab_id, title, icon, groups in TABS:
-            page = Adw.PreferencesPage()
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, margin_bottom=24)
             for group in groups:
-                page.add(self.build_folders() if group == "FOLDERS" else self.build_group(*group))
-            self.tabs.add_titled_with_icon(page, tab_id, title, icon)
-
-        # Tabs: a text rail with an underline under the header, never icons-only; scrolls sideways if too narrow.
-        rail = Gtk.Box(css_classes=["rail"])
-        self.tab_buttons, group = {}, None
-        for tab_id, title, *_ in TABS:
-            b = Gtk.ToggleButton(label=title, group=group, css_classes=["rail-tab"])
-            b.connect("toggled", lambda b, t=tab_id: b.get_active() and self.tabs.set_visible_child_name(t))
-            rail.append(b)
-            group = group or b
-            self.tab_buttons[tab_id] = b
-        self.tab_buttons[TABS[0][0]].set_active(True)
-        self.tabs.connect("notify::visible-child-name",
-                          lambda st, _: self.tab_buttons[st.get_visible_child_name()].set_active(True))
-        self.switcher = Gtk.ScrolledWindow(child=rail, hscrollbar_policy=Gtk.PolicyType.EXTERNAL,
-                                           vscrollbar_policy=Gtk.PolicyType.NEVER, propagate_natural_height=True)
+                box.append(self.build_folders() if group == "FOLDERS" else self.build_group(*group))
+            self.tabs.add_titled_with_icon(Gtk.ScrolledWindow(child=box, hscrollbar_policy=Gtk.PolicyType.NEVER),
+                                           tab_id, title, icon)
+        # The sections: a column left of the settings; below 960sp a bar at the bottom of the window instead.
+        self.sections = Gtk.ListBox(css_classes=["navigation-sidebar", "sections"], valign=Gtk.Align.START,
+                                    width_request=180)
+        for tab_id, title, icon, _ in TABS:
+            row = Gtk.Box(spacing=12)
+            row.append(Gtk.Image(icon_name=icon))
+            row.append(Gtk.Label(label=title, xalign=0))
+            self.sections.append(row)
+        ids = [t[0] for t in TABS]
+        self.sections.connect("row-selected", lambda _l, row: row and self.tabs.set_visible_child_name(ids[row.get_index()]))
+        self.tabs.connect("notify::visible-child-name", lambda st, _: self.sections.select_row(
+            self.sections.get_row_at_index(ids.index(st.get_visible_child_name()))))
+        self.sections.select_row(self.sections.get_row_at_index(0))
+        self.switcher_bar = Adw.ViewSwitcherBar(stack=self.tabs)
+        body = Gtk.Box(spacing=16, vexpand=True)
+        body.append(self.sections)
+        body.append(self.tabs)
         tools = Gio.Menu()
         for label, action, icon in [("Duplicate", "win.duplicate", "edit-copy-symbolic"),
                                     ("Export…", "win.export", "document-save-as-symbolic"),
@@ -578,17 +607,13 @@ class Window(Adw.ApplicationWindow):
         header = Adw.HeaderBar(show_title=False)
         self.more_button = Gtk.MenuButton(icon_name="view-more-symbolic", menu_model=more, tooltip_text="More")
         header.pack_end(self.more_button)
-        top = Adw.Clamp(maximum_size=600, tightening_threshold=560, margin_top=14, margin_start=12, margin_end=12)
-        top_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_start=12, margin_end=12)
-        top_box.append(self.build_hero())
-        top_box.append(self.switcher)
-        top.set_child(top_box)
-        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        body.append(top)
-        self.tabs.set_vexpand(True)
-        body.append(self.tabs)
-        edit = Adw.ToolbarView(content=body)
+        col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18, margin_top=14, margin_start=18, margin_end=18)
+        col.append(self.build_hero())
+        col.append(body)
+        # Grows with the window up to 1100 px, so wide windows are filled, not stretched.
+        edit = Adw.ToolbarView(content=Adw.Clamp(maximum_size=1100, tightening_threshold=900, child=col))
         edit.add_top_bar(header)
+        edit.add_bottom_bar(self.switcher_bar)
 
         new = Gtk.Button(label="New connection", action_name="win.new", halign=Gtk.Align.CENTER,
                          css_classes=["pill", "suggested-action"])
@@ -630,12 +655,13 @@ class Window(Adw.ApplicationWindow):
             self.specs.attach(value, col, 1, 1, 1)
             self.spec_values.append(value)
         inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, hexpand=True)
-        for w in (top, Gtk.Box(css_classes=["rule"]), self.specs):
+        self.hero_rule = Gtk.Box(css_classes=["rule"])
+        for w in (top, self.hero_rule, self.specs):
             inner.append(w)
-        box = Gtk.Box(spacing=16, css_classes=["hero"])
-        box.append(self.hero_led)
-        box.append(inner)
-        return box
+        self.hero = Gtk.Box(spacing=16, css_classes=["hero"])
+        self.hero.append(self.hero_led)
+        self.hero.append(inner)
+        return self.hero
 
     def update_hero(self):
         if not self.rdp:
@@ -651,7 +677,8 @@ class Window(Adw.ApplicationWindow):
         for w, base in ((self.hero_status, "status"), (self.hero_led, "led")):
             w.set_css_classes([base] + ([kind] if kind else []))
         self.connect_button.set_label("Disconnect" if running else "Connect")
-        self.connect_button.set_css_classes(["pill", "big-connect", "destructive-action" if running else "suggested-action"])
+        self.connect_button.set_css_classes(["pill", "big-connect", "stop" if running else "go"])
+        self.hero.set_css_classes(["hero"] + (["online"] if running else []))
         for label, value in zip(self.spec_values, self.specs_of(rdp)):
             label.set_label(value)
             label.set_tooltip_text(value)

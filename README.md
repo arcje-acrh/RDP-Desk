@@ -1,15 +1,15 @@
 # RDP Desk
 
 **Keep, edit and open Remote Desktop (RDP) connections on Linux.**
-A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop client has, laid out in the same six tabs. FreeRDP makes the connections.
+A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop client has, laid out in the same six sections. FreeRDP makes the connections.
 
 ![RDP Desk: the connection list and the General tab](docs/screenshots/main.png)
 
 ## Features
 
 - **Your connections in one list**, each with a status light that glows green while connected. Search them, and double-click one to connect. Each session opens in its own window, so several can run at once.
-- **A header card for every connection**: status (*Ready*, *Connected*, *Needs a computer*), name, address and one big Connect button, over a strip that sums up the setup at a glance: *Screen*, *Sign in*, *Shared* and *Route*.
-- **Every setting the Windows client has: 54 in all, in six tabs** (the Windows client's, with *Local Resources* called *Devices*). General, Display, Devices, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
+- **A header card for every connection**: status (*Ready*, *Connected*, *Needs a computer*), name, address and one big Connect button, over a strip that sums up the setup at a glance: *Screen*, *Sign in*, *Shared* and *Route*. Below it, the sections sit in a column beside the settings; in narrow windows they move to a bar at the bottom, and in short ones the card goes compact.
+- **Every setting the Windows client has: 54 in all, in six sections** (the Windows client's tabs, with *Local Resources* called *Devices*). General, Display, Devices, Programs, Experience and Advanced. That includes multiple monitors, remote scaling, audio and microphone, clipboard, printers, drives, USB devices, cameras, security keys, RemoteApp, the performance options, Network Level Authentication and RD Gateway.
 - **A help icon on every setting.** Hover the ⓘ to see what the setting does and when you would change it.
 - **Shared folders.** Pick folders such as Downloads or a NAS share. They appear on the remote computer as drives.
 - **Plain `.rdp` files.** Connections are stored in the format Windows uses:
@@ -26,9 +26,9 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 
 | | |
 |---|---|
-| ![Display tab](docs/screenshots/display.png) | ![Devices tab with shared folders](docs/screenshots/local.png) |
+| ![Display section](docs/screenshots/display.png) | ![Devices section with shared folders](docs/screenshots/local.png) |
 | **Display**: window or full screen, resolution, scaling, monitors | **Devices**: audio, keyboard, devices, shared folders |
-| ![Experience tab](docs/screenshots/experience.png) | ![Advanced tab](docs/screenshots/advanced.png) |
+| ![Experience section](docs/screenshots/experience.png) | ![Advanced section](docs/screenshots/advanced.png) |
 | **Experience**: connection speed and visual effects | **Advanced**: server authentication, NLA, RD Gateway |
 | ![Sign-in dialog](docs/screenshots/sign-in.png) | ![Light style](docs/screenshots/light.png) |
 | Asks for the password when none is saved | Light style |
@@ -61,7 +61,7 @@ It needs GTK ≥ 4.12, libadwaita ≥ 1.5, Python ≥ 3.10 and FreeRDP 3.
 
 ## Using it
 
-- **New connection** (＋ or Ctrl+N): type the computer's name or IP address on the General tab and press the big **Connect** button in the header card. That's all. Everything else has sensible defaults.
+- **New connection** (＋ or Ctrl+N): type the computer's name or IP address in the General section and press the big **Connect** button in the header card. That's all. Everything else has sensible defaults.
 - **Import** (☰ › Import, Ctrl+O, or drag files onto the window) copies `.rdp` files into your list.
 - **Connect**: the Connect button, a double-click in the list, or Ctrl+Enter. Press it again (**Disconnect**) to end the session.
 - **Passwords**: type it in the Password row and press Enter to save it in the keyring. Leave it empty and you're asked when connecting, with an option to remember it.
@@ -74,7 +74,7 @@ Changes are saved as you make them. Connections live in `~/.local/share/rdpdesk/
 
 Every setting has a hover help icon in the app. In brief:
 
-| Tab | What you set there |
+| Section | What you set there |
 |---|---|
 | **General** | Name, computer (name or IP, optional `:port`), user name, domain, password, *always ask for credentials* |
 | **Display** | Window or full screen, size, *resize the remote desktop with the window*, scale to fit, remote scaling (125 %, 150 %…), all monitors / span / pick monitors, colour depth, connection bar |
@@ -111,8 +111,8 @@ RDP Desk is one Python file (`rdpdesk.py`). It reads and writes `.rdp` files, sh
 
 - **"FreeRDP 3 is not installed"**: install your distribution's FreeRDP 3 package (`freerdp` on Arch, `freerdp3-sdl` on Debian/Ubuntu).
 - **"The computer did not answer"**: check the address, that Remote Desktop is turned on on that computer (Settings › System › Remote Desktop), and that a firewall allows port 3389.
-- **"Security negotiation failed"**: try switching *Network Level Authentication* on the Advanced tab.
-- **The picture flickers or flashes black** (often after a Windows update, especially in VMs): turn off *Graphics acceleration* on the Experience tab.
+- **"Security negotiation failed"**: try switching *Network Level Authentication* in the Advanced section.
+- **The picture flickers or flashes black** (often after a Windows update, especially in VMs): turn off *Graphics acceleration* in the Experience section.
 - **A certificate warning on every connect**: normal for home PCs with a self-signed certificate. Set *If server authentication fails* to *Connect and don't warn me* only on networks you trust.
 
 ## Development

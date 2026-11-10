@@ -93,9 +93,7 @@ def steps(app):
     win.tabs.set_visible_child_name("local")  # the longest tab: scrolled down to the shared folders
     yield
     page = win.tabs.get_child_by_name("local")
-    scroller = page.get_first_child()
-    while scroller and not isinstance(scroller, Gtk.ScrolledWindow):
-        scroller = scroller.get_first_child()
+    scroller = page  # each tab is a ScrolledWindow
     adj = scroller.get_vadjustment()
     adj.set_value(adj.get_upper() - adj.get_page_size())
     yield
