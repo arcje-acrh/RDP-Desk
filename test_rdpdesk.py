@@ -65,6 +65,8 @@ for s in r.SPECS:
     assert s["kind"] in ("text", "switch", "inv", "star", "combo", "spin"), s
     if s["kind"] == "combo":
         assert s["default"] in [v for v, _ in s["choices"]], s["key"]
+    if s["kind"] == "spin":
+        assert s["lo"] <= int(s["default"]) <= s["hi"], s["key"]
 assert len({s["key"] for s in r.SPECS}) == len(r.SPECS), "no key twice"
 missing = [s["key"] for s in r.SPECS if s["key"] not in r.HELP]
 assert not missing, f"settings without help: {missing}"

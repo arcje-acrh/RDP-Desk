@@ -81,10 +81,11 @@ class RdpFile:
 
 # ---------------------------------------------------------------- settings, as the Windows client groups them
 
-def R(key, title, kind="switch", default="0", choices=None, lo=0, hi=0, subtitle="", typ=None):
+def R(key, title, kind="switch", default="0", choices=None, lo=0, hi=0, subtitle="", typ=None, step=1):
     """One setting. kind: text | switch | inv (switch, on = "0") | star (switch, on = "*") | combo | spin."""
     typ = typ or ("s" if kind in ("text", "star") else "i")
-    return dict(key=key, title=title, kind=kind, default=default, choices=choices, lo=lo, hi=hi, subtitle=subtitle, typ=typ)
+    return dict(key=key, title=title, kind=kind, default=default, choices=choices, lo=lo, hi=hi, subtitle=subtitle, typ=typ,
+                step=step)
 
 
 TABS = [
@@ -104,8 +105,8 @@ TABS = [
             R("desktopheight", "Height", "spin", "900", lo=200, hi=8192),
             R("dynamic resolution", "Resize the remote desktop with the window", default="1"),
             R("smart sizing", "Scale the remote desktop to fit the window"),
-            R("desktopscalefactor", "Scaling on the remote computer", "combo", "100",
-              [(str(p), f"{p} %") for p in (100, 125, 150, 175, 200, 250, 300)]),
+            R("desktopscalefactor", "Scaling on the remote computer (%)", "spin", "100", lo=100, hi=500, step=25,
+              subtitle="Any value from 100 to 500; the buttons step by 25"),
         ]),
         ("Monitors", "", [
             R("use multimon", "Use all my monitors for the remote session"),
@@ -214,7 +215,7 @@ HELP = {
     "desktopheight": "Height of the remote desktop in pixels when it opens in a window. With 'Resize the remote desktop with the window' on, this is only the size it starts at.",
     "dynamic resolution": "When you resize the window, the remote computer changes its resolution to match, so nothing is stretched or cut off. Needs Windows 8.1 / Server 2012 R2 or newer.",
     "smart sizing": "Shrink or stretch the remote picture to fit the window instead of changing the remote resolution. Text can look soft; meant for old computers that cannot resize.",
-    "desktopscalefactor": "How big text and icons are drawn on the remote computer, like Settings > Display > Scale in Windows. On a sharp laptop screen 125–150 % keeps things readable.",
+    "desktopscalefactor": "How big text and icons are drawn on the remote computer, like Settings > Display > Scale in Windows. On a sharp laptop screen 125–150 % keeps things readable. Type any value from 100 to 500 (for example 140); the − and + buttons step by 25.",
     "use multimon": "Use every monitor of this computer for the session; each becomes a separate monitor on the remote computer. Works in full screen.",
     "span monitors": "Join all monitors into one wide remote screen instead of separate monitors. For remote computers that cannot handle several monitors.",
     "selectedmonitors": "With 'Use all my monitors' on: use only these monitors, by number, counting from 0. Leave empty to use all of them.",
@@ -740,8 +741,9 @@ class Window(Adw.ApplicationWindow):
             row.connect("notify::selected", lambda r, _: r.get_selected() < len(s["choices"])
                         and self.edit(s, s["choices"][r.get_selected()][0]))
         elif kind == "spin":
-            row = Adw.SpinRow.new_with_range(s["lo"], s["hi"], 1)
+            row = Adw.SpinRow.new_with_range(s["lo"], s["hi"], s["step"])
             row.set_title(s["title"])
+            row.set_subtitle(s["subtitle"])
             row.connect("notify::value", lambda r, _: self.edit(s, str(int(r.get_value()))))
         else:  # switch, inv, star
             on, off = {"switch": ("1", "0"), "inv": ("0", "1"), "star": ("*", "")}[kind]

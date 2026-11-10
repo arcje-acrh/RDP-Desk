@@ -77,7 +77,7 @@ Every setting has a hover help icon in the app. In brief:
 | Section | What you set there |
 |---|---|
 | **General** | Name, computer (name or IP, optional `:port`), user name, domain, password, *always ask for credentials* |
-| **Display** | Window or full screen, size, *resize the remote desktop with the window*, scale to fit, remote scaling (125 %, 150 %…), all monitors / span / pick monitors, colour depth, connection bar |
+| **Display** | Window or full screen, size, *resize the remote desktop with the window*, scale to fit, remote scaling (any value from 100 to 500 %), all monitors / span / pick monitors, colour depth, connection bar |
 | **Devices** | Where sound plays, microphone, audio quality; where Windows key shortcuts go; clipboard, printers, smart cards, serial ports, all drives, USB devices, cameras, security keys, location; shared folders |
 | **Programs** | Start a program instead of the desktop; RemoteApp (one program window, no desktop) |
 | **Experience** | Connection speed (auto-detect), graphics acceleration (turn off if the picture flickers), wallpaper, font smoothing, composition, window dragging, animations, visual styles, bitmap caching, automatic reconnect |
