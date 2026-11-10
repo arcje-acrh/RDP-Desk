@@ -65,6 +65,8 @@ It needs GTK ≥ 4.12, libadwaita ≥ 1.5, Python ≥ 3.10 and FreeRDP 3.
 - **Import** (☰ › Import, Ctrl+O, or drag files onto the window) copies `.rdp` files into your list.
 - **Connect**: the Connect button, a double-click in the list, or Ctrl+Enter. Press it again (**Disconnect**) to end the session.
 - **Passwords**: type it in the Password row and press Enter to save it in the keyring. Leave it empty and you're asked when connecting, with an option to remember it.
+- **Hide RDP Desk while connected** (☰ menu, a tick-box): Connect hides RDP Desk so only the remote desktop is open; it comes back when the session ends, however it ends (Disconnect, closing the remote window, a dropped connection or a failed sign-in).
+- **Quitting with sessions open** asks first, like a browser closing several tabs: *Disconnect 2 sessions and quit?*
 - **More** (⋮): Duplicate, Export and Delete as icon buttons, and Copy the address.
 - **Search**: Ctrl+F.
 

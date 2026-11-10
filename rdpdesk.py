@@ -19,6 +19,20 @@ from pathlib import Path
 VERSION = "0.1.0"
 APP_ID = "io.github.rdpdesk"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "rdpdesk"
+PREFS = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "rdpdesk" / "settings.json"
+
+
+def load_prefs():
+    """App preferences (not per connection): {"hide while connected": bool}."""
+    try:
+        return json.loads(PREFS.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def save_prefs(prefs):
+    PREFS.parent.mkdir(parents=True, exist_ok=True)
+    PREFS.write_text(json.dumps(prefs, indent=1) + "\n")
 FOLDERS_KEY = "rdpdesk folders"  # app-only key (JSON list of paths); FreeRDP and Windows skip unknown keys
 GFX_KEY = "rdpdesk graphics"  # app-only key: 0 = connect without the RDP 8 graphics pipeline (FreeRDP -gfx)
 # FreeRDP 3 clients, best first: the SDL one can ask about certificates and sizes itself to the window.
@@ -503,6 +517,12 @@ class Window(Adw.ApplicationWindow):
             action = Gio.SimpleAction.new(name, None)
             action.connect("activate", lambda *_, f=fn: f())
             self.add_action(action)
+        # Hide RDP Desk while a session runs; it comes back when the session ends. A tick-box in the menu.
+        self.prefs = load_prefs()
+        hide = Gio.SimpleAction.new_stateful("hide-while-connected", None,
+                                             GLib.Variant.new_boolean(bool(self.prefs.get("hide while connected"))))
+        hide.connect("change-state", self.set_hide_while_connected)
+        self.add_action(hide)
 
         self.toasts = Adw.ToastOverlay()
         self.split = Adw.NavigationSplitView(min_sidebar_width=260, max_sidebar_width=340)
@@ -545,6 +565,7 @@ class Window(Adw.ApplicationWindow):
         header.pack_start(Gtk.Button(icon_name="list-add-symbolic", tooltip_text="New connection (Ctrl+N)",
                                      action_name="win.new"))
         menu = menu_sections([("New connection", "win.new"), ("Import .rdp files…", "win.import")],
+                             [("Hide RDP Desk while connected", "win.hide-while-connected")],
                              [("Open the connections folder", "win.folder")],
                              [("About RDP Desk", "win.about")])
         self.menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Menu")
@@ -1104,6 +1125,8 @@ class Window(Adw.ApplicationWindow):
         self.sessions[str(rdp.path)] = proc
         threading.Thread(target=self.watch, args=(name, str(rdp.path), proc), daemon=True).start()
         self.mark_running()
+        if self.prefs.get("hide while connected"):
+            self.set_visible(False)  # the app keeps running; ended() brings the window back
 
     def watch(self, name, key, proc):
         """Thread: keep the end of FreeRDP's log, then report back on the main loop."""
@@ -1115,6 +1138,8 @@ class Window(Adw.ApplicationWindow):
         if self.sessions.get(key) is proc:
             del self.sessions[key]
         self.mark_running()
+        if not self.get_visible() and not self.sessions:
+            self.present()  # hidden while connected: back when the session is over (any way it ended)
         if proc.stopped:
             return False
         why = failure(tail)
@@ -1139,14 +1164,26 @@ class Window(Adw.ApplicationWindow):
                 self.sessions.clear()
                 self.destroy()
         n = len(self.sessions)
-        dialog = Adw.AlertDialog(heading="Disconnect and quit?",
-                                 body=f"{n} remote session{'s are' if n > 1 else ' is'} still open.")
+        names = sorted(Path(k).stem for k in self.sessions)
+        listed = names[0] if n == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+        dialog = Adw.AlertDialog(heading=f"Disconnect {n} session{'s' if n > 1 else ''} and quit?",
+                                 body=f"{listed} {'is' if n == 1 else 'are'} still connected. Quitting ends "
+                                      f"{'it' if n == 1 else 'them'}.", default_response="cancel",
+                                 close_response="cancel")
         dialog.add_response("cancel", "Cancel")
         dialog.add_response("quit", "Disconnect and quit")
         dialog.set_response_appearance("quit", Adw.ResponseAppearance.DESTRUCTIVE)
         dialog.connect("response", answered)
         dialog.present(self)
         return True
+
+    def set_hide_while_connected(self, action, value):
+        action.set_state(value)
+        self.prefs["hide while connected"] = value.get_boolean()
+        try:
+            save_prefs(self.prefs)
+        except OSError as e:
+            self.toast(f"Could not save the setting: {e.strerror}")
 
     def focus_search(self):
         self.split.set_show_content(False)

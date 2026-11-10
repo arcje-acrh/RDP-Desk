@@ -60,6 +60,15 @@ assert r.failure(pre).endswith("Monitor configuration virtual desktop width must
 assert "/p:" in " ".join(r.client_args(r.RdpFile(win), "x", "", "")[0]), "an empty password is still a password"
 assert r.failure(["[INFO] all fine"]) is None
 
+# App preferences round-trip; a missing or broken file means defaults.
+with tempfile.TemporaryDirectory() as d:
+    r.PREFS = Path(d) / "rdpdesk" / "settings.json"
+    assert r.load_prefs() == {}
+    r.save_prefs({"hide while connected": True})
+    assert r.load_prefs() == {"hide while connected": True}
+    r.PREFS.write_text("{not json")
+    assert r.load_prefs() == {}
+
 # Every setting row is well formed.
 for s in r.SPECS:
     assert s["kind"] in ("text", "switch", "inv", "star", "combo", "spin"), s
