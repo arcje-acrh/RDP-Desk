@@ -1,12 +1,12 @@
 # RDP Desk as a pacman package, built from this checkout (not a download):
-#   cd rdpdesk/pkg && makepkg -si   -> /usr/bin/rdpdesk, launcher, icon, .rdp file type
+#   cd RDP-Desk/pkg && makepkg -si   -> /usr/bin/rdpdesk, launcher, icon, .rdp file type
 #   sudo pacman -R rdpdesk                       -> removes it again
 pkgname=rdpdesk
 pkgver=0.1.0
 pkgrel=9
 pkgdesc="Keep, edit and open Remote Desktop (RDP) connections (GTK 4 / libadwaita, FreeRDP)"
 arch=(any)
-url="https://github.com/arcje-acrh/rdpdesk"
+url="https://github.com/arcje-acrh/RDP-Desk"
 license=(MIT)
 depends=(python python-gobject gtk4 libadwaita libsecret freerdp org.freedesktop.secrets)
 

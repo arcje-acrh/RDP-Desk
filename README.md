@@ -39,8 +39,8 @@ A small GTK 4 / libadwaita app with the settings the Windows Remote Desktop clie
 EndeavourOS, Manjaro, CachyOS, Garuda and others:
 
 ```sh
-git clone https://github.com/arcje-acrh/rdpdesk.git
-cd rdpdesk/pkg && makepkg -si
+git clone https://github.com/arcje-acrh/RDP-Desk.git
+cd RDP-Desk/pkg && makepkg -si
 ```
 
 This installs the `rdpdesk` package with its dependencies: `python-gobject gtk4 libadwaita libsecret freerdp` and a keyring. If you have no keyring yet, pacman asks which one to install. To remove it: `sudo pacman -R rdpdesk`.
