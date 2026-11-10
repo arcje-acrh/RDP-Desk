@@ -16,7 +16,6 @@ import threading
 from collections import deque
 from pathlib import Path
 
-VERSION = "0.1.0"
 APP_ID = "io.github.rdpdesk"
 DATA = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "rdpdesk"
 PREFS = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "rdpdesk" / "settings.json"
@@ -511,7 +510,7 @@ class Window(Adw.ApplicationWindow):
         self.rows = []  # (setting, row)
 
         for name, fn in [("new", self.new), ("import", self.pick_import), ("folder", self.open_folder),
-                         ("about", self.about), ("connect", self.toggle_session), ("duplicate", self.duplicate),
+                         ("connect", self.toggle_session), ("duplicate", self.duplicate),
                          ("export", self.export), ("delete", self.delete), ("search", self.focus_search),
                          ("copy-address", self.copy_address)]:
             action = Gio.SimpleAction.new(name, None)
@@ -566,8 +565,7 @@ class Window(Adw.ApplicationWindow):
                                      action_name="win.new"))
         menu = menu_sections([("New connection", "win.new"), ("Import .rdp files…", "win.import")],
                              [("Hide RDP Desk while connected", "win.hide-while-connected")],
-                             [("Open the connections folder", "win.folder")],
-                             [("About RDP Desk", "win.about")])
+                             [("Open the connections folder", "win.folder")])
         self.menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic", menu_model=menu, tooltip_text="Menu")
         header.pack_end(self.menu_button)
 
@@ -1191,11 +1189,6 @@ class Window(Adw.ApplicationWindow):
 
     def open_folder(self):
         Gtk.FileLauncher.new(Gio.File.new_for_path(str(DATA))).launch(self, None, None)
-
-    def about(self):
-        Adw.AboutDialog(application_name="RDP Desk", application_icon=APP_ID, version=VERSION,
-                        comments="Keep, edit and open Remote Desktop connections.\nConnections by FreeRDP.",
-                        license_type=Gtk.License.MIT_X11, developer_name="Nitant").present(self)
 
     def toast(self, text):
         self.toasts.add_toast(Adw.Toast(title=GLib.markup_escape_text(text), timeout=4))
