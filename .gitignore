@@ -3,3 +3,8 @@ pkg/src/
 pkg/pkg/
 pkg/*.pkg.tar.*
 __pycache__/
+
+# ---- tests ----
+# development tests stay local: put them in tests/ (never committed). Build tests, the ones the package build
+# itself runs (PKGBUILD check(), make check), are the only tests in the repo.
+tests/
